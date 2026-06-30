@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mijn Planner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#171b26;--surface2:#1e2336;--border:#252b3b;--border2:#303654;
+  --text:#dde3f0;--muted:#8892a8;--dim:#5a6078;
+  --green:#3ecf72;--yellow:#f5c842;--red:#f05252;--orange:#f08030;
+  --purple:#a78bfa;--teal:#2dd4bf;--blue:#4f8ef7;--pink:#f472b6;
+}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh}
+button{background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:7px;padding:.35rem .8rem;font-size:.78rem;cursor:pointer;font-family:inherit;transition:background .15s}
+button:hover{background:#2a3050}
+button.primary{background:#1a3a7a;border-color:#2a5ab0;color:#90c0f0}
+button.primary:hover{background:#1f4590}
+button.danger{background:#3a0f0f;border-color:#7a1a1a;color:#f07070}
+button.danger:hover{background:#4a1515}
+button.ghost{background:transparent;border-color:var(--border)}
+input,select,textarea{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:.4rem .6rem;color:var(--text);font-family:inherit;font-size:.8rem}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+a{color:var(--blue)}
+
+/* ── TOP NAV ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:.6rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:1rem;flex-wrap:wrap}
+.topbar-left{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap}
+.brand{font-family:'Instrument Serif',serif;font-size:1.25rem;white-space:nowrap}
+.brand em{font-style:italic;color:var(--yellow)}
+.page-nav{display:flex;gap:.3rem;background:var(--surface2);border-radius:8px;padding:.2rem}
+.page-nav button{background:transparent;border:none;padding:.4rem .85rem;border-radius:6px;font-size:.78rem;color:var(--muted)}
+.page-nav button.active{background:var(--blue);color:#fff}
+.topbar-actions{display:flex;gap:.4rem;flex-wrap:wrap}
+
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1a5a1a;color:#80e080;border:1px solid #2a8a2a;border-radius:8px;padding:.6rem 1rem;font-size:.8rem;z-index:400;transform:translateY(100px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.err{background:#3a0f0f;border-color:#7a1a1a;color:#f07070}
+
+.page{display:none}
+.page.active{display:block}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:1.5rem;width:100%;max-width:440px;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:1rem;margin-bottom:1rem;font-family:'Instrument Serif',serif}
+.modal-btns{display:flex;gap:.5rem;margin-top:1.2rem;justify-content:flex-end;flex-wrap:wrap}
+.form-group{margin-bottom:.75rem}
+.form-group label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:.25rem}
+.form-group input,.form-group select,.form-group textarea{width:100%}
+.form-row{display:flex;gap:.6rem}
+.form-row .form-group{flex:1}
+
+/* ── BLOCK TYPE COLORS ── */
+.bt-sleep {background:#0f1a2e;border-color:#334466;color:#6a8ab8}
+.bt-wake  {background:#0f100f;border-color:#252a25;color:#4a5a4a}
+.bt-learn {background:#0d1f12;border-color:#1e5c33;color:#5ab87a}
+.bt-school{background:#0d1a2a;border-color:#1a4a7a;color:#5a9ad0}
+.bt-exam  {background:#2a0f0f;border-color:#7a1a1a;color:#e07070}
+.bt-bike  {background:#121a0a;border-color:#3a5a10;color:#90b840}
+.bt-social{background:#1a0f2a;border-color:#5a2a8a;color:#b070e0}
+.bt-content{background:#1a1a0a;border-color:#5a4a00;color:#c8a020}
+.bt-run   {background:#0a1f10;border-color:#1a7a3a;color:#50d870}
+.bt-race  {background:#0a2010;border-color:#30c840;color:#50e860}
+.bt-concert{background:#1a0a2a;border-color:#7a0a9a;color:#d060f0}
+.bt-free  {background:#141820;border-color:#2a3050;color:#5a6888}
+.bt-birthday{background:#1a0a18;border-color:#7a1a6a;color:#d060b8}
+.bt-beach {background:#0a1820;border-color:#0a4a6a;color:#40a8c8}
+.bt-away  {background:#1a1008;border-color:#6a3a08;color:#c07828}
+.bt-other {background:#161a26;border-color:#303654;color:#9aa4c0}
+
+/* ── PAGE LAYOUT ── */
+.pagewrap{max-width:1100px;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+.page-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
+.date-nav{display:flex;align-items:center;gap:.6rem}
+.date-nav .label{font-family:'Instrument Serif',serif;font-size:1.3rem;min-width:180px;text-align:center}
+.date-nav button{padding:.3rem .6rem}
+
+/* ── DAG PAGE: timeline ── */
+.timeline{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.time-slot{display:flex;border-bottom:1px solid #1e2535;min-height:2.4rem}
+.time-slot:last-child{border-bottom:none}
+.time-label{width:3.4rem;flex-shrink:0;font-size:.63rem;color:var(--dim);padding:.5rem .4rem 0;text-align:right;border-right:2px solid var(--border)}
+.slot-blocks{flex:1;padding:.3rem .6rem;display:flex;flex-direction:column;gap:.25rem}
+.evt-block{border-radius:6px;padding:.3rem .55rem .3rem .75rem;font-size:.78rem;line-height:1.4;border-left:3px solid;display:flex;align-items:flex-start;gap:.4rem;cursor:pointer;transition:filter .15s}
+.evt-block:hover{filter:brightness(1.15)}
+.evt-text{flex:1;min-width:0}
+.evt-title{font-weight:600}
+.evt-sub{font-size:.68rem;opacity:.75}
+.evt-actions{display:flex;gap:.2rem;opacity:0;transition:opacity .15s;flex-shrink:0}
+.evt-block:hover .evt-actions{opacity:1}
+.evt-actions button{padding:.1rem .3rem;font-size:.65rem;border-radius:4px;background:rgba(0,0,0,.4);border-color:rgba(255,255,255,.15)}
+.run-detail{display:none;background:#091508;border-radius:0 0 5px 5px;padding:.5rem .7rem;margin-top:.3rem;font-size:.75rem;line-height:1.6;color:#a0e0b0;border:1px solid #1a4a28;border-top:none}
+.run-detail.open{display:block}
+.rec-badge{font-size:.58rem;background:var(--surface2);color:var(--muted);padding:.05rem .35rem;border-radius:10px;margin-left:.3rem}
+
+/* ── WEEK PAGE ── */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.6rem}
+@media(max-width:900px){.week-grid{grid-template-columns:repeat(2,1fr)}}
+.week-day{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6rem;min-height:160px;display:flex;flex-direction:column;cursor:pointer}
+.week-day:hover{border-color:var(--border2)}
+.week-day.today{border-color:var(--blue)}
+.week-day h4{font-size:.8rem;margin-bottom:.1rem}
+.week-day .wd-date{font-size:.65rem;color:var(--muted);margin-bottom:.5rem}
+.week-day .wd-evt{font-size:.68rem;padding:.2rem .4rem;border-radius:4px;border-left:2px solid;margin-bottom:.25rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.week-day .wd-more{font-size:.65rem;color:var(--muted)}
+.week-day .wd-tasks{margin-top:auto;padding-top:.4rem;border-top:1px solid var(--border);font-size:.65rem;color:var(--muted)}
+
+/* ── MAAND PAGE ── */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.month-weekday-label{font-size:.65rem;color:var(--muted);text-align:center;padding:.3rem 0;text-transform:uppercase;letter-spacing:.05em}
+.month-cell{background:var(--surface);border:1px solid var(--border);border-radius:7px;min-height:80px;padding:.35rem;cursor:pointer;display:flex;flex-direction:column;gap:.15rem}
+.month-cell:hover{border-color:var(--border2)}
+.month-cell.today{border-color:var(--blue);border-width:2px}
+.month-cell.other-month{opacity:.35}
+.month-cell .mc-date{font-size:.7rem;color:var(--muted)}
+.month-cell .mc-evt{font-size:.6rem;padding:.05rem .3rem;border-radius:3px;border-left:2px solid;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.month-cell .mc-more{font-size:.58rem;color:var(--dim)}
+
+/* ── JAAR PAGE ── */
+.year-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:800px){.year-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.year-grid{grid-template-columns:1fr}}
+.mini-month{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.7rem;cursor:pointer}
+.mini-month:hover{border-color:var(--border2)}
+.mini-month h4{font-size:.85rem;margin-bottom:.5rem;text-align:center;font-family:'Instrument Serif',serif}
+.mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.mini-cell{font-size:.6rem;text-align:center;padding:.15rem 0;color:var(--dim);border-radius:3px;position:relative}
+.mini-cell.has-evt::after{content:'';position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--blue)}
+.mini-cell.today{background:var(--blue);color:#fff;font-weight:600}
+.mini-cell.label{color:var(--muted);font-weight:600}
+.year-nav{display:flex;align-items:center;gap:.8rem;justify-content:center;margin-bottom:1.25rem}
+.year-nav .ylabel{font-family:'Instrument Serif',serif;font-size:1.6rem;min-width:80px;text-align:center}
+
+/* ── TAKEN PAGE ── */
+.taken-tabs{display:flex;gap:.3rem;background:var(--surface2);border-radius:8px;padding:.2rem;margin-bottom:1rem;width:fit-content}
+.taken-tabs button{background:transparent;border:none;padding:.35rem .8rem;border-radius:6px;font-size:.75rem;color:var(--muted)}
+.taken-tabs button.active{background:var(--blue);color:#fff}
+.task-list{display:flex;flex-direction:column;gap:.4rem}
+.task-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;display:flex;align-items:center;gap:.6rem}
+.task-item input[type=checkbox]{width:16px;height:16px;flex-shrink:0;accent-color:var(--green)}
+.task-item .task-text{flex:1;font-size:.82rem}
+.task-item.done .task-text{text-decoration:line-through;color:var(--dim)}
+.task-item .task-date{font-size:.65rem;color:var(--muted);flex-shrink:0}
+.task-group{margin-bottom:1.25rem}
+.task-group h4{font-size:.8rem;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em}
+.add-task-row{display:flex;gap:.5rem;margin-bottom:1.25rem}
+.add-task-row input{flex:1}
+
+/* ── AGENDA PAGE ── */
+.agenda-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-bottom:1.25rem}
+.agenda-section h3{font-family:'Instrument Serif',serif;font-size:1.05rem;margin-bottom:.5rem}
+.agenda-section p{font-size:.78rem;color:var(--muted);line-height:1.6;margin-bottom:.8rem}
+.cal-list{display:flex;flex-direction:column;gap:.4rem;margin-top:.8rem}
+.cal-item{display:flex;align-items:center;gap:.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:.5rem .7rem}
+.cal-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.cal-item .cal-name{flex:1;font-size:.8rem}
+.cal-item .cal-meta{font-size:.65rem;color:var(--muted)}
+.dropzone-file{border:2px dashed var(--border2);border-radius:10px;padding:1.5rem;text-align:center;font-size:.8rem;color:var(--muted);cursor:pointer;transition:border-color .15s}
+.dropzone-file:hover,.dropzone-file.over{border-color:var(--blue);color:var(--text)}
+input[type=file]{display:none}
+
+/* ── TIMER ── */
+.timer-fab{position:fixed;bottom:1.5rem;left:1.5rem;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:.8rem 1rem;z-index:250;display:none;align-items:center;gap:.8rem;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.timer-fab.show{display:flex}
+.timer-fab .tf-label{font-size:.7rem;color:var(--muted)}
+.timer-fab .tf-time{font-family:'Instrument Serif',serif;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.timer-fab .tf-time.warn{color:var(--orange)}
+.timer-fab .tf-time.done{color:var(--green)}
+.timer-presets{display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0}
+.timer-presets button{font-size:.72rem;padding:.3rem .6rem}
+
+/* ── WEATHER STRIP ── */
+.weather-strip{display:flex;gap:.5rem;overflow-x:auto;padding:.7rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:1rem}
+.weather-strip::-webkit-scrollbar{height:4px}
+.wx-item{flex-shrink:0;text-align:center;min-width:56px;font-size:.68rem;color:var(--muted)}
+.wx-item .wx-time{margin-bottom:.2rem}
+.wx-item .wx-icon{font-size:1.1rem;margin:.2rem 0}
+.wx-item .wx-temp{color:var(--text);font-weight:600;font-size:.74rem}
+.wx-loading{font-size:.75rem;color:var(--dim);padding:.5rem}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<div id="loginGate" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:2rem 1.75rem">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="font-family:'Instrument Serif',serif;font-size:1.6rem">Mijn <em style="font-style:italic;color:var(--yellow)">Planner</em></div>
+      <p style="font-size:.75rem;color:var(--muted);margin-top:.4rem" id="loginSubtitle">Log in om verder te gaan</p>
+    </div>
+
+    <div id="loginNotConfigured" style="display:none">
+      <p style="font-size:.78rem;color:var(--orange);line-height:1.6;background:#2d1b00;border:1px solid #6e3700;border-radius:8px;padding:.7rem .9rem">
+        Accounts zijn nog niet aangesloten. Vul je Supabase-gegevens in bovenaan het bestand (zoek naar <code style="background:var(--surface2);padding:.1rem .3rem;border-radius:4px">SUPABASE_URL</code>) — zie de instructies die erbij geleverd zijn.
+      </p>
+    </div>
+
+    <div id="loginSignupView">
+      <div class="form-group"><label>Jouw naam</label><input type="text" id="acc-name" placeholder="Bijv. Sam"></div>
+      <div class="form-group"><label>E-mailadres</label><input type="email" id="acc-email" placeholder="jij@voorbeeld.nl"></div>
+      <div class="form-group"><label>Wachtwoord (6+ tekens)</label><input type="password" id="acc-pass" placeholder="••••••" maxlength="72"></div>
+      <button class="primary" style="width:100%;padding:.6rem;margin-top:.5rem" onclick="signUp()" id="signupBtn">Account aanmaken</button>
+      <p style="font-size:.68rem;color:var(--dim);margin-top:.8rem;line-height:1.5">Je krijgt een bevestigingsmail. Klik op de link daarin om je account te activeren.</p>
+      <button class="ghost" style="width:100%;margin-top:.8rem;font-size:.72rem" onclick="showLoginView()">Ik heb al een account</button>
+    </div>
+
+    <div id="loginSigninView" style="display:none">
+      <div class="form-group"><label>E-mailadres</label><input type="email" id="login-email" placeholder="jij@voorbeeld.nl"></div>
+      <div class="form-group"><label>Wachtwoord</label><input type="password" id="login-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')signIn()"></div>
+      <button class="primary" style="width:100%;padding:.6rem;margin-top:.5rem" onclick="signIn()" id="signinBtn">Inloggen</button>
+      <p id="loginError" style="font-size:.72rem;color:var(--red);margin-top:.6rem;text-align:center;display:none"></p>
+      <div style="display:flex;justify-content:space-between;margin-top:.8rem;font-size:.7rem">
+        <button class="ghost" onclick="showSignupView()" style="font-size:.7rem">Nieuw account</button>
+        <button class="ghost" onclick="showResetView()" style="font-size:.7rem">Wachtwoord vergeten?</button>
+      </div>
+    </div>
+
+    <div id="loginResetView" style="display:none">
+      <p style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem">Vul je e-mailadres in. Je krijgt een link om je wachtwoord opnieuw in te stellen.</p>
+      <div class="form-group"><label>E-mailadres</label><input type="email" id="reset-email" placeholder="jij@voorbeeld.nl"></div>
+      <button class="primary" style="width:100%;padding:.6rem;margin-top:.5rem" onclick="sendResetEmail()" id="resetBtn">Stuur herstellink</button>
+      <p id="resetMsg" style="font-size:.72rem;color:var(--green);margin-top:.6rem;text-align:center;display:none">Mail verstuurd! Check je inbox (en spam-folder).</p>
+      <button class="ghost" style="width:100%;margin-top:.8rem;font-size:.72rem" onclick="showLoginView()">Terug naar inloggen</button>
+    </div>
+
+    <div id="loginNewPasswordView" style="display:none">
+      <p style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem">Kies een nieuw wachtwoord.</p>
+      <div class="form-group"><label>Nieuw wachtwoord (6+ tekens)</label><input type="password" id="newpw-pass"></div>
+      <button class="primary" style="width:100%;padding:.6rem;margin-top:.5rem" onclick="updatePasswordAfterReset()">Wachtwoord instellen</button>
+    </div>
+
+    <div id="loginCheckingSession" style="text-align:center;padding:1rem 0;color:var(--muted);font-size:.8rem">Bezig met laden...</div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none">
+
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="brand">Mijn <em>Planner</em></div>
+    <div class="page-nav" id="pageNav">
+      <button data-page="dag">Dag</button>
+      <button data-page="week">Week</button>
+      <button data-page="maand">Maand</button>
+      <button data-page="jaar">Jaar</button>
+      <button data-page="taken">Taken</button>
+      <button data-page="agenda">Agenda's</button>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <div id="liveClock" style="font-size:.74rem;color:var(--muted);padding:.35rem .6rem;border:1px solid var(--border);border-radius:7px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+      <span id="clockText">--:--:--</span>
+      <span style="color:var(--border2)">|</span>
+      <span id="topbarWeather">laden...</span>
+    </div>
+    <button onclick="openTimerModal()">⏱ Timer</button>
+    <button onclick="downloadRoosterPDF()">🖨 Print rooster</button>
+    <button onclick="saveAll()">💾 Opslaan</button>
+    <button onclick="goToToday()">📍 Vandaag</button>
+    <button onclick="openSettingsModal()">⚙️ Instellingen</button>
+  </div>
+</div>
+
+<div id="pages">
+
+  <!-- DAG -->
+  <div class="page active" id="page-dag">
+    <div class="pagewrap">
+      <div class="page-toolbar">
+        <div class="date-nav">
+          <button onclick="dagNav(-1)">‹</button>
+          <div class="label" id="dagLabel"></div>
+          <button onclick="dagNav(1)">›</button>
+        </div>
+        <div style="display:flex;gap:.4rem">
+          <button class="primary" onclick="openEventModal()">+ Gebeurtenis</button>
+          <button onclick="quickAddTask()">+ Taak</button>
+        </div>
+      </div>
+      <div class="weather-strip" id="weatherStrip">
+        <div class="wx-loading">Weer laden voor Noordwijkerhout...</div>
+      </div>
+      <div class="timeline" id="dagTimeline"></div>
+      <div style="margin-top:1.25rem" id="dagTasksWrap"></div>
+    </div>
+  </div>
+
+  <!-- WEEK -->
+  <div class="page" id="page-week">
+    <div class="pagewrap">
+      <div class="page-toolbar">
+        <div class="date-nav">
+          <button onclick="weekNav(-1)">‹</button>
+          <div class="label" id="weekLabel"></div>
+          <button onclick="weekNav(1)">›</button>
+        </div>
+        <button class="primary" onclick="openEventModal()">+ Gebeurtenis</button>
+      </div>
+      <div class="week-grid" id="weekGrid"></div>
+    </div>
+  </div>
+
+  <!-- MAAND -->
+  <div class="page" id="page-maand">
+    <div class="pagewrap">
+      <div class="page-toolbar">
+        <div class="date-nav">
+          <button onclick="maandNav(-1)">‹</button>
+          <div class="label" id="maandLabel"></div>
+          <button onclick="maandNav(1)">›</button>
+        </div>
+        <button class="primary" onclick="openEventModal()">+ Gebeurtenis</button>
+      </div>
+      <div class="month-grid" id="maandWeekdayLabels"></div>
+      <div class="month-grid" id="maandGrid" style="margin-top:4px"></div>
+    </div>
+  </div>
+
+  <!-- JAAR -->
+  <div class="page" id="page-jaar">
+    <div class="pagewrap">
+      <div class="year-nav">
+        <button onclick="jaarNav(-1)">‹</button>
+        <div class="ylabel" id="jaarLabel"></div>
+        <button onclick="jaarNav(1)">›</button>
+      </div>
+      <div class="year-grid" id="jaarGrid"></div>
+    </div>
+  </div>
+
+  <!-- TAKEN -->
+  <div class="page" id="page-taken">
+    <div class="pagewrap">
+      <div class="taken-tabs" id="takenTabs">
+        <button data-range="dag" class="active">Dag</button>
+        <button data-range="week">Week</button>
+        <button data-range="maand">Maand</button>
+        <button data-range="jaar">Jaar</button>
+      </div>
+      <div class="add-task-row">
+        <input type="text" id="newTaskText" placeholder="Nieuwe taak...">
+        <input type="date" id="newTaskDate">
+        <button class="primary" onclick="addTaskFromForm()">Toevoegen</button>
+      </div>
+      <div id="takenContent"></div>
+    </div>
+  </div>
+
+  <!-- AGENDA'S -->
+  <div class="page" id="page-agenda">
+    <div class="pagewrap">
+
+      <div class="agenda-section">
+        <h3>Google Agenda &amp; andere agenda's</h3>
+        <p>Een los HTML-bestand kan niet rechtstreeks bij je Google-account inloggen — dat vereist een server. Wel kun je je Google Agenda (of Apple/Outlook) exporteren als .ics bestand en die hier importeren. Andersom kun je deze planner ook exporteren naar .ics en die in Google Agenda importeren.</p>
+        <p style="font-size:.72rem">Zo exporteer je vanuit Google Agenda: instellingen → agenda instellingen → kies je agenda → "agenda exporteren". Je krijgt een .ics bestand.</p>
+      </div>
+
+      <div class="agenda-section">
+        <h3>Importeren (.ics)</h3>
+        <p>Sleep een .ics bestand hierheen, of klik om te bladeren.</p>
+        <div class="dropzone-file" id="dropzone" onclick="document.getElementById('icsInput').click()">
+          📅 Klik of sleep een .ics bestand hierheen
+        </div>
+        <input type="file" id="icsInput" accept=".ics">
+        <div class="cal-list" id="calList"></div>
+      </div>
+
+      <div class="agenda-section">
+        <h3>Exporteren</h3>
+        <p>Download je hele planning als .ics bestand, te importeren in Google Agenda, Apple Agenda of Outlook.</p>
+        <button class="primary" onclick="exportICS()">⬇ Exporteer alles als .ics</button>
+      </div>
+
+      <div class="agenda-section">
+        <h3>Terugkerende blokken</h3>
+        <p>Dingen die elke week terugkomen (zoals school) automatisch laten doorlopen tot 28 juni 2029.</p>
+        <button onclick="openRecurringModal()">+ Terugkerend blok toevoegen</button>
+        <div class="cal-list" id="recList" style="margin-top:.8rem"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="timer-fab" id="timerFab">
+  <div>
+    <div class="tf-label" id="tfLabel">Timer</div>
+    <div class="tf-time" id="tfTime">00:00</div>
+  </div>
+  <button onclick="pauseResumeTimer()" id="tfPauseBtn">⏸</button>
+  <button class="danger" onclick="stopTimer()">⏹</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- shared modal -->
+<div class="modal-bg" id="modal">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+/* ══════════════ CORE DATA & UTILS ══════════════ */
+const APP_START = new Date(2026,5,27); // 27 juni 2026
+const APP_END = new Date(2029,5,28);   // 28 juni 2029
+const DAY_NAMES = ['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
+const DAY_NAMES_SHORT = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
+const MONTH_NAMES = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+
+function pad(n){return n.toString().padStart(2,'0')}
+function dateKey(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function parseKey(k){const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)}
+function uid(){return '_'+Math.random().toString(36).slice(2,9)}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r}
+function isSameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
+function todayKey(){return dateKey(nowAmsterdam())}
+function clampDate(d){ if(d<APP_START) return new Date(APP_START); if(d>APP_END) return new Date(APP_END); return d; }
+
+/* Amsterdam-aware "now" — reads wall-clock time in Europe/Amsterdam regardless of device timezone */
+function nowAmsterdam(){
+  const parts = new Intl.DateTimeFormat('en-US',{
+    timeZone:'Europe/Amsterdam', year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+  }).formatToParts(new Date());
+  const get = t => parts.find(p=>p.type===t).value;
+  const y = parseInt(get('year'),10), mo = parseInt(get('month'),10)-1, da = parseInt(get('day'),10);
+  let h = parseInt(get('hour'),10); if(h===24) h=0;
+  const mi = parseInt(get('minute'),10), se = parseInt(get('second'),10);
+  return new Date(y,mo,da,h,mi,se);
+}
+
+/* App state */
+let state = {
+  events: {},      // dateKey -> [ {id,time,endTime,title,desc,type,runKey,runDetail} ]
+  tasks: {},        // dateKey -> [ {id,text,done} ]
+  recurring: [],     // [ {id,title,desc,type,weekday(0-6),time,endTime,startDate,endDate} ]
+  calendars: [],      // imported calendar metadata [ {id,name,color,source} ]
+};
+
+let viewDate = new Date(2026,5,27); // currently viewed date, drives dag/week/maand/jaar
+let currentPage = 'dag';
+
+function showToast(msg, isErr){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.toggle('err',!!isErr);
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+let saveDebounceTimer = null;
+function saveAll(showMsg){
+  // always cache locally first (instant + offline-safe)
+  try{ localStorage.setItem('mijn_planner_state', JSON.stringify(state)); }catch(e){}
+
+  if(!SUPABASE_CONFIGURED || !account){
+    if(showMsg!==false) showToast('Lokaal opgeslagen!');
+    return;
+  }
+  // debounce cloud writes so rapid edits don't spam the database
+  clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(async ()=>{
+    try{
+      const { error } = await supabaseClient
+        .from('planner_data')
+        .upsert({ user_id: account.id, data: state, updated_at: new Date().toISOString() }, { onConflict:'user_id' });
+      if(error) throw error;
+      if(showMsg!==false) showToast('Opgeslagen in de cloud!');
+    }catch(e){
+      showToast('Kon niet naar de cloud opslaan — lokaal wel bewaard.', true);
+      console.warn('Cloud save failed:', e);
+    }
+  }, 600);
+}
+
+async function loadAll(){
+  // start from local cache so the app is instantly usable
+  try{
+    const saved = localStorage.getItem('mijn_planner_state');
+    if(saved) state = Object.assign(state, JSON.parse(saved));
+  }catch(e){}
+
+  if(!SUPABASE_CONFIGURED || !account) return;
+
+  try{
+    const { data, error } = await supabaseClient
+      .from('planner_data')
+      .select('data')
+      .eq('user_id', account.id)
+      .maybeSingle();
+    if(error) throw error;
+    if(data && data.data){
+      state = Object.assign(state, data.data);
+      try{ localStorage.setItem('mijn_planner_state', JSON.stringify(state)); }catch(e){}
+    }
+  }catch(e){
+    console.warn('Cloud load failed, using local cache:', e);
+  }
+}
+
+/* Get all events for a date, including recurring ones expanded */
+function getEventsForDate(d){
+  const key = dateKey(d);
+  let evts = (state.events[key]||[]).slice();
+  // expand recurring
+  state.recurring.forEach(r=>{
+    if(r.weekday !== d.getDay()) return;
+    const start = r.startDate ? parseKey(r.startDate) : APP_START;
+    const end = r.endDate ? parseKey(r.endDate) : APP_END;
+    if(d < start || d > end) return;
+    // check if this instance was deleted/overridden for this date
+    const overrideKey = `rec_${r.id}_${key}`;
+    if(state.events[key] && state.events[key].some(e=>e.recOverride===r.id)) return; // already materialized
+    evts.push({
+      id: 'rec_'+r.id+'_'+key,
+      time:r.time, endTime:r.endTime, title:r.title, desc:r.desc, type:r.type,
+      isRecurring:true, recId:r.id
+    });
+  });
+  return evts.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+}
+
+function getTasksForDate(d){
+  const key = dateKey(d);
+  return (state.tasks[key]||[]);
+}
+
+/* Cross-page refresh hook */
+function refreshAll(){
+  if(typeof renderDagPage==='function') renderDagPage();
+  if(typeof renderWeekPage==='function') renderWeekPage();
+  if(typeof renderMaandPage==='function') renderMaandPage();
+  if(typeof renderJaarPage==='function') renderJaarPage();
+  if(typeof renderTakenPage==='function') renderTakenPage();
+  if(typeof renderAgendaPage==='function') renderAgendaPage();
+}
+
+function goToToday(){
+  const t = nowAmsterdam();
+  viewDate = (t>=APP_START && t<=APP_END) ? t : new Date(APP_START);
+  refreshAll();
+}
+
+function switchPage(page){
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('#pageNav button').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
+  refreshAll();
+}
+
+document.getElementById('pageNav').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-page]');
+  if(btn) switchPage(btn.dataset.page);
+});
+
+function openModal(html){
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+}
+document.getElementById('modal').addEventListener('click', e=>{
+  if(e.target.id==='modal') closeModal();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') closeModal();
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){ e.preventDefault(); saveAll(); }
+});
+
+/* ══════════════ EVENT TYPE OPTIONS ══════════════ */
+const EVENT_TYPES = [
+  {v:'bt-sleep',l:'Slapen'},{v:'bt-wake',l:'Opstaan'},{v:'bt-learn',l:'Leren'},
+  {v:'bt-school',l:'School / les'},{v:'bt-exam',l:'Toets'},{v:'bt-bike',l:'Fietsen'},
+  {v:'bt-social',l:'Afspreken'},{v:'bt-run',l:'Hardlopen'},{v:'bt-content',l:'Content project'},
+  {v:'bt-race',l:'Race / wedstrijd'},{v:'bt-concert',l:'Concert'},{v:'bt-birthday',l:'Verjaardag'},
+  {v:'bt-beach',l:'Strand'},{v:'bt-away',l:'De deur uit'},{v:'bt-free',l:'Vrij / eten / pauze'},
+  {v:'bt-other',l:'Overig'}
+];
+function typeOptionsHTML(selected){
+  return EVENT_TYPES.map(t=>`<option value="${t.v}"${t.v===selected?' selected':''}>${t.l}</option>`).join('');
+}
+
+/* ══════════════ EVENT CRUD ══════════════ */
+function openEventModal(dateObj, existing){
+  const d = dateObj || viewDate;
+  const key = dateKey(d);
+  const isEdit = !!existing;
+  openModal(`
+    <h3>${isEdit?'Gebeurtenis bewerken':'Nieuwe gebeurtenis'}</h3>
+    <div class="form-group"><label>Datum</label><input type="date" id="ev-date" value="${key}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Begintijd</label><input type="time" id="ev-start" value="${existing?.time||'09:00'}"></div>
+      <div class="form-group"><label>Eindtijd (optioneel)</label><input type="time" id="ev-end" value="${existing?.endTime||''}"></div>
+    </div>
+    <div class="form-group"><label>Titel</label><input type="text" id="ev-title" value="${existing?.title||''}" placeholder="Naam van het blok"></div>
+    <div class="form-group"><label>Omschrijving</label><textarea id="ev-desc" placeholder="Extra details...">${existing?.desc||''}</textarea></div>
+    <div class="form-group"><label>Type</label><select id="ev-type">${typeOptionsHTML(existing?.type||'bt-free')}</select></div>
+    <div class="modal-btns">
+      <button class="primary" onclick="saveEvent('${isEdit?existing.id:''}','${isEdit?key:''}')">Opslaan</button>
+      ${isEdit?`<button class="danger" onclick="deleteEvent('${existing.id}','${key}',${existing.isRecurring?`'${existing.recId}'`:'null'})">Verwijderen</button>`:''}
+      <button onclick="closeModal()">Annuleren</button>
+    </div>
+  `);
+}
+
+function saveEvent(existingId, oldKey){
+  const newKey = document.getElementById('ev-date').value;
+  const evt = {
+    id: existingId && !existingId.startsWith('rec_') ? existingId : uid(),
+    time: document.getElementById('ev-start').value||'09:00',
+    endTime: document.getElementById('ev-end').value||undefined,
+    title: document.getElementById('ev-title').value || 'Naamloos blok',
+    desc: document.getElementById('ev-desc').value||undefined,
+    type: document.getElementById('ev-type').value,
+  };
+  // remove old instance if editing and moved
+  if(existingId && oldKey){
+    if(existingId.startsWith('rec_')){
+      // materialize override: mark recurring instance as removed by adding override marker, then add new event
+      if(!state.events[oldKey]) state.events[oldKey]=[];
+    } else {
+      state.events[oldKey] = (state.events[oldKey]||[]).filter(e=>e.id!==existingId);
+    }
+  }
+  if(!state.events[newKey]) state.events[newKey]=[];
+  state.events[newKey].push(evt);
+  closeModal();
+  saveAll();
+  refreshAll();
+  showToast(existingId?'Gebeurtenis bijgewerkt!':'Gebeurtenis toegevoegd!');
+}
+
+function deleteEvent(id, key, recId){
+  if(recId){
+    // add an override marker so recurring instance stops appearing on this date
+    if(!state.events[key]) state.events[key]=[];
+    state.events[key].push({id:uid(), recOverride:recId, hidden:true});
+  } else {
+    state.events[key] = (state.events[key]||[]).filter(e=>e.id!==id);
+  }
+  closeModal();
+  saveAll();
+  refreshAll();
+  showToast('Verwijderd.');
+}
+
+function toggleRunDetail(id){
+  const el = document.getElementById('rd-'+id);
+  if(el) el.classList.toggle('open');
+}
+
+function renderEventBlock(evt, dateObj){
+  const isRun = evt.type==='bt-run' || evt.type==='bt-race';
+  const recBadge = evt.isRecurring ? '<span class="rec-badge">herhaalt</span>' : '';
+  const onclickAttr = isRun ? `onclick="toggleRunDetail('${evt.id}')"` : `onclick="openEventModal(parseKey('${dateKey(dateObj)}'), ${JSON.stringify(evt).replace(/"/g,'&quot;')})"`;
+  return `<div class="evt-block ${evt.type}" ${onclickAttr} id="blk-${evt.id}">
+    <div class="evt-text">
+      <div class="evt-title">${evt.title}${recBadge}</div>
+      ${evt.desc?`<div class="evt-sub">${evt.desc}</div>`:''}
+      ${isRun&&evt.desc?`<div class="run-detail" id="rd-${evt.id}"><p>${evt.desc}</p></div>`:''}
+    </div>
+    <div class="evt-actions" onclick="event.stopPropagation()">
+      <button onclick="openEventModal(parseKey('${dateKey(dateObj)}'), ${JSON.stringify(evt).replace(/"/g,'&quot;')})">✏️</button>
+      <button onclick="deleteEvent('${evt.id}','${dateKey(dateObj)}',${evt.isRecurring?`'${evt.recId}'`:'null'})">🗑</button>
+    </div>
+  </div>`;
+}
+
+/* ══════════════ TASK CRUD ══════════════ */
+function addTaskFromForm(){
+  const text = document.getElementById('newTaskText').value.trim();
+  const dateVal = document.getElementById('newTaskDate').value || todayKey();
+  if(!text){ showToast('Vul een taak in',true); return; }
+  if(!state.tasks[dateVal]) state.tasks[dateVal]=[];
+  state.tasks[dateVal].push({id:uid(), text, done:false});
+  document.getElementById('newTaskText').value='';
+  saveAll();
+  refreshAll();
+  showToast('Taak toegevoegd!');
+}
+
+function quickAddTask(){
+  const text = prompt('Nieuwe taak voor '+dateKey(viewDate)+':');
+  if(!text) return;
+  const key = dateKey(viewDate);
+  if(!state.tasks[key]) state.tasks[key]=[];
+  state.tasks[key].push({id:uid(), text, done:false});
+  saveAll();
+  refreshAll();
+}
+
+function toggleTask(key, id){
+  const t = (state.tasks[key]||[]).find(x=>x.id===id);
+  if(t){ t.done = !t.done; saveAll(); refreshAll(); }
+}
+function deleteTask(key, id){
+  state.tasks[key] = (state.tasks[key]||[]).filter(x=>x.id!==id);
+  saveAll();
+  refreshAll();
+}
+
+/* ══════════════ DAG PAGE ══════════════ */
+function dagNav(n){ viewDate = clampDate(addDays(viewDate,n)); refreshAll(); }
+
+function renderDagPage(){
+  if(currentPage!=='dag') return;
+  document.getElementById('dagLabel').textContent = `${DAY_NAMES[viewDate.getDay()]} ${viewDate.getDate()} ${MONTH_NAMES[viewDate.getMonth()]}`;
+  if(typeof fetchWeatherForDate==='function') fetchWeatherForDate(viewDate);
+  const events = getEventsForDate(viewDate).filter(e=>!e.hidden);
+  const tl = document.getElementById('dagTimeline');
+  if(events.length===0){
+    tl.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--muted);font-size:.82rem">Geen gebeurtenissen op deze dag. Klik op "+ Gebeurtenis" om iets toe te voegen.</div>`;
+  } else {
+    tl.innerHTML = events.map(e=>`
+      <div class="time-slot">
+        <div class="time-label">${e.time||''}</div>
+        <div class="slot-blocks">${renderEventBlock(e, viewDate)}</div>
+      </div>`).join('');
+  }
+  const tasks = getTasksForDate(viewDate);
+  const key = dateKey(viewDate);
+  let th = `<h4 style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em">Taken vandaag</h4>`;
+  if(tasks.length===0){
+    th += `<p style="font-size:.78rem;color:var(--dim)">Geen taken voor deze dag.</p>`;
+  } else {
+    th += `<div class="task-list">` + tasks.map(t=>`
+      <div class="task-item ${t.done?'done':''}">
+        <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${key}','${t.id}')">
+        <span class="task-text">${t.text}</span>
+        <button onclick="deleteTask('${key}','${t.id}')" style="padding:.1rem .4rem">🗑</button>
+      </div>`).join('') + `</div>`;
+  }
+  document.getElementById('dagTasksWrap').innerHTML = th;
+}
+
+/* ══════════════ WEEK PAGE ══════════════ */
+function getWeekStart(d){
+  const day = d.getDay();
+  const diff = day===0?-6:1-day; // monday start
+  return addDays(d, diff);
+}
+function weekNav(n){ viewDate = clampDate(addDays(viewDate, n*7)); refreshAll(); }
+
+function renderWeekPage(){
+  if(currentPage!=='week') return;
+  const start = getWeekStart(viewDate);
+  const end = addDays(start,6);
+  document.getElementById('weekLabel').textContent = `${start.getDate()} ${MONTH_NAMES[start.getMonth()].slice(0,3)} – ${end.getDate()} ${MONTH_NAMES[end.getMonth()].slice(0,3)}`;
+  const grid = document.getElementById('weekGrid');
+  let html='';
+  for(let i=0;i<7;i++){
+    const d = addDays(start,i);
+    const events = getEventsForDate(d).filter(e=>!e.hidden);
+    const tasks = getTasksForDate(d);
+    const isToday = isSameDay(d, nowAmsterdam());
+    const shown = events.slice(0,4);
+    const more = events.length - shown.length;
+    html += `<div class="week-day ${isToday?'today':''}" onclick="viewDate=parseKey('${dateKey(d)}');switchPage('dag')">
+      <h4>${DAY_NAMES[d.getDay()]}</h4>
+      <div class="wd-date">${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0,3)}</div>
+      ${shown.map(e=>`<div class="wd-evt ${e.type}">${e.time?e.time+' ':''}${e.title}</div>`).join('')}
+      ${more>0?`<div class="wd-more">+${more} meer</div>`:''}
+      ${tasks.length>0?`<div class="wd-tasks">${tasks.filter(t=>!t.done).length}/${tasks.length} taken open</div>`:''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+/* ══════════════ MAAND PAGE ══════════════ */
+function maandNav(n){
+  const d = new Date(viewDate.getFullYear(), viewDate.getMonth()+n, 1);
+  viewDate = clampDate(d);
+  refreshAll();
+}
+
+function renderMaandPage(){
+  if(currentPage!=='maand') return;
+  document.getElementById('maandLabel').textContent = `${MONTH_NAMES[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
+  const labelsEl = document.getElementById('maandWeekdayLabels');
+  labelsEl.innerHTML = ['Ma','Di','Wo','Do','Vr','Za','Zo'].map(l=>`<div class="month-weekday-label">${l}</div>`).join('');
+
+  const year = viewDate.getFullYear(), month = viewDate.getMonth();
+  const firstOfMonth = new Date(year, month, 1);
+  const startOffset = firstOfMonth.getDay()===0?6:firstOfMonth.getDay()-1;
+  const gridStart = addDays(firstOfMonth, -startOffset);
+  const grid = document.getElementById('maandGrid');
+  let html='';
+  for(let i=0;i<42;i++){
+    const d = addDays(gridStart,i);
+    const inMonth = d.getMonth()===month;
+    const isToday = isSameDay(d, nowAmsterdam());
+    const events = getEventsForDate(d).filter(e=>!e.hidden);
+    const shown = events.slice(0,2);
+    const more = events.length - shown.length;
+    html += `<div class="month-cell ${inMonth?'':'other-month'} ${isToday?'today':''}" onclick="viewDate=parseKey('${dateKey(d)}');switchPage('dag')">
+      <div class="mc-date">${d.getDate()}</div>
+      ${shown.map(e=>`<div class="mc-evt ${e.type}">${e.title}</div>`).join('')}
+      ${more>0?`<div class="mc-more">+${more}</div>`:''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+/* ══════════════ JAAR PAGE ══════════════ */
+function jaarNav(n){
+  viewDate = clampDate(new Date(viewDate.getFullYear()+n, viewDate.getMonth(), 1));
+  refreshAll();
+}
+
+function renderJaarPage(){
+  if(currentPage!=='jaar') return;
+  const year = viewDate.getFullYear();
+  document.getElementById('jaarLabel').textContent = year;
+  const grid = document.getElementById('jaarGrid');
+  let html='';
+  for(let m=0;m<12;m++){
+    const first = new Date(year,m,1);
+    if(first < new Date(APP_START.getFullYear(),APP_START.getMonth(),1) || first > APP_END) {
+      // still show but might be empty/out of range visually allowed
+    }
+    const startOffset = first.getDay()===0?6:first.getDay()-1;
+    const gridStart = addDays(first,-startOffset);
+    let cells='';
+    ['M','D','W','D','V','Z','Z'].forEach(l=>cells+=`<div class="mini-cell label">${l}</div>`);
+    for(let i=0;i<42;i++){
+      const d = addDays(gridStart,i);
+      if(d.getMonth()!==m){ cells+=`<div class="mini-cell"></div>`; continue; }
+      const hasEvt = (getEventsForDate(d).filter(e=>!e.hidden).length>0) || (getTasksForDate(d).length>0);
+      const isToday = isSameDay(d,nowAmsterdam());
+      cells+=`<div class="mini-cell ${hasEvt?'has-evt':''} ${isToday?'today':''}">${d.getDate()}</div>`;
+    }
+    html += `<div class="mini-month" onclick="viewDate=new Date(${year},${m},1);switchPage('maand')">
+      <h4>${MONTH_NAMES[m]}</h4>
+      <div class="mini-grid">${cells}</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+/* ══════════════ TAKEN PAGE ══════════════ */
+let takenRange = 'dag';
+document.getElementById('takenTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-range]');
+  if(!btn) return;
+  takenRange = btn.dataset.range;
+  document.querySelectorAll('#takenTabs button').forEach(b=>b.classList.toggle('active', b===btn));
+  renderTakenPage();
+});
+
+function renderTakenPage(){
+  if(currentPage!=='taken') return;
+  document.getElementById('newTaskDate').value = dateKey(viewDate);
+  const content = document.getElementById('takenContent');
+  let days = [];
+  if(takenRange==='dag'){
+    days = [viewDate];
+  } else if(takenRange==='week'){
+    const start = getWeekStart(viewDate);
+    days = Array.from({length:7},(_,i)=>addDays(start,i));
+  } else if(takenRange==='maand'){
+    const year=viewDate.getFullYear(), month=viewDate.getMonth();
+    const numDays = new Date(year,month+1,0).getDate();
+    days = Array.from({length:numDays},(_,i)=>new Date(year,month,i+1));
+  } else if(takenRange==='jaar'){
+    const year = viewDate.getFullYear();
+    let d = new Date(year,0,1);
+    while(d.getFullYear()===year){ days.push(new Date(d)); d=addDays(d,1); }
+  }
+
+  let html='';
+  let totalTasks=0;
+  days.forEach(d=>{
+    const tasks = getTasksForDate(d);
+    if(tasks.length===0) return;
+    totalTasks += tasks.length;
+    const key = dateKey(d);
+    html += `<div class="task-group"><h4>${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}</h4><div class="task-list">`;
+    tasks.forEach(t=>{
+      html += `<div class="task-item ${t.done?'done':''}">
+        <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${key}','${t.id}')">
+        <span class="task-text">${t.text}</span>
+        <button onclick="deleteTask('${key}','${t.id}')" style="padding:.1rem .4rem">🗑</button>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  if(totalTasks===0){
+    html = `<p style="font-size:.82rem;color:var(--muted);padding:1rem 0">Geen taken in deze periode. Voeg er een toe hierboven.</p>`;
+  }
+  content.innerHTML = html;
+}
+
+/* ══════════════ AGENDA PAGE — RECURRING ══════════════ */
+function openRecurringModal(existing){
+  const isEdit = !!existing;
+  openModal(`
+    <h3>${isEdit?'Terugkerend blok bewerken':'Terugkerend blok toevoegen'}</h3>
+    <div class="form-group"><label>Titel</label><input type="text" id="rec-title" value="${existing?.title||''}" placeholder="Bijv. School"></div>
+    <div class="form-group"><label>Omschrijving</label><textarea id="rec-desc">${existing?.desc||''}</textarea></div>
+    <div class="form-group"><label>Type</label><select id="rec-type">${typeOptionsHTML(existing?.type||'bt-school')}</select></div>
+    <div class="form-group"><label>Dag van de week</label>
+      <select id="rec-weekday">
+        ${DAY_NAMES.map((n,i)=>`<option value="${i}"${existing&&existing.weekday===i?' selected':''}>${n}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Begintijd</label><input type="time" id="rec-start" value="${existing?.time||'09:00'}"></div>
+      <div class="form-group"><label>Eindtijd</label><input type="time" id="rec-end" value="${existing?.endTime||''}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Vanaf datum</label><input type="date" id="rec-startdate" value="${existing?.startDate||dateKey(APP_START)}"></div>
+      <div class="form-group"><label>Tot datum</label><input type="date" id="rec-enddate" value="${existing?.endDate||dateKey(APP_END)}"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="primary" onclick="saveRecurring('${isEdit?existing.id:''}')">Opslaan</button>
+      ${isEdit?`<button class="danger" onclick="deleteRecurring('${existing.id}')">Verwijderen</button>`:''}
+      <button onclick="closeModal()">Annuleren</button>
+    </div>
+  `);
+}
+
+function saveRecurring(existingId){
+  const rec = {
+    id: existingId||uid(),
+    title: document.getElementById('rec-title').value||'Terugkerend blok',
+    desc: document.getElementById('rec-desc').value||undefined,
+    type: document.getElementById('rec-type').value,
+    weekday: parseInt(document.getElementById('rec-weekday').value,10),
+    time: document.getElementById('rec-start').value||'09:00',
+    endTime: document.getElementById('rec-end').value||undefined,
+    startDate: document.getElementById('rec-startdate').value||dateKey(APP_START),
+    endDate: document.getElementById('rec-enddate').value||dateKey(APP_END),
+  };
+  if(existingId){
+    const idx = state.recurring.findIndex(r=>r.id===existingId);
+    if(idx>=0) state.recurring[idx]=rec;
+  } else {
+    state.recurring.push(rec);
+  }
+  closeModal();
+  saveAll();
+  refreshAll();
+  showToast('Terugkerend blok opgeslagen!');
+}
+
+function deleteRecurring(id){
+  state.recurring = state.recurring.filter(r=>r.id!==id);
+  closeModal();
+  saveAll();
+  refreshAll();
+  showToast('Verwijderd.');
+}
+
+function renderAgendaPage(){
+  if(currentPage!=='agenda') return;
+  // recurring list
+  const recList = document.getElementById('recList');
+  if(state.recurring.length===0){
+    recList.innerHTML = `<p style="font-size:.78rem;color:var(--dim)">Nog geen terugkerende blokken.</p>`;
+  } else {
+    recList.innerHTML = state.recurring.map(r=>`
+      <div class="cal-item" style="cursor:pointer" onclick='openRecurringModal(${JSON.stringify(r).replace(/'/g,"&apos;")})'>
+        <div class="cal-dot" style="background:var(--blue)"></div>
+        <div class="cal-name">${r.title} — elke ${DAY_NAMES[r.weekday]} ${r.time}</div>
+        <div class="cal-meta">${r.startDate} t/m ${r.endDate}</div>
+      </div>`).join('');
+  }
+  // imported calendars list
+  const calList = document.getElementById('calList');
+  if(state.calendars.length===0){
+    calList.innerHTML = `<p style="font-size:.78rem;color:var(--dim);margin-top:.5rem">Nog geen agenda's geïmporteerd.</p>`;
+  } else {
+    calList.innerHTML = state.calendars.map(c=>`
+      <div class="cal-item">
+        <div class="cal-dot" style="background:${c.color}"></div>
+        <div class="cal-name">${c.name}</div>
+        <div class="cal-meta">${c.count} items</div>
+        <button onclick="removeCalendar('${c.id}')" style="padding:.1rem .4rem">🗑</button>
+      </div>`).join('');
+  }
+}
+
+function removeCalendar(calId){
+  if(!confirm('Deze geïmporteerde agenda en alle bijbehorende items verwijderen?')) return;
+  Object.keys(state.events).forEach(key=>{
+    state.events[key] = state.events[key].filter(e=>e.calId!==calId);
+  });
+  state.calendars = state.calendars.filter(c=>c.id!==calId);
+  saveAll();
+  refreshAll();
+  showToast('Agenda verwijderd.');
+}
+
+/* ══════════════ ICS IMPORT/EXPORT ══════════════ */
+function parseICS(text){
+  const lines = text.split(/\r\n|\n|\r/);
+  const events = [];
+  let cur = null;
+  lines.forEach(line=>{
+    if(line.startsWith('BEGIN:VEVENT')){ cur = {}; }
+    else if(line.startsWith('END:VEVENT')){ if(cur) events.push(cur); cur=null; }
+    else if(cur){
+      const idx = line.indexOf(':');
+      if(idx<0) return;
+      let key = line.slice(0,idx).split(';')[0];
+      const val = line.slice(idx+1);
+      if(key==='SUMMARY') cur.title = val;
+      else if(key==='DESCRIPTION') cur.desc = val.replace(/\\n/g,' ').replace(/\\,/g,',');
+      else if(key==='DTSTART'){ cur.dtstart = val; }
+      else if(key==='DTEND'){ cur.dtend = val; }
+    }
+  });
+  return events;
+}
+
+function icsDateToParts(val){
+  // formats: 20260627T090000Z or 20260627T090000 or 20260627
+  const m = val.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2}))?/);
+  if(!m) return null;
+  const [,y,mo,da,h,mi] = m;
+  return { dateKey:`${y}-${mo}-${da}`, time: h?`${h}:${mi}`:null };
+}
+
+document.getElementById('icsInput').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(file) handleICSFile(file);
+});
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', ()=> dz.classList.remove('over'));
+dz.addEventListener('drop', e=>{
+  e.preventDefault();
+  dz.classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if(file) handleICSFile(file);
+});
+
+function handleICSFile(file){
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const text = ev.target.result;
+      const parsed = parseICS(text);
+      if(parsed.length===0){ showToast('Geen gebeurtenissen gevonden in bestand',true); return; }
+      const calId = uid();
+      const colors = ['#4f8ef7','#f5c842','#a78bfa','#2dd4bf','#f472b6','#f08030'];
+      const color = colors[state.calendars.length % colors.length];
+      let count=0;
+      parsed.forEach(p=>{
+        if(!p.dtstart || !p.title) return;
+        const parts = icsDateToParts(p.dtstart);
+        if(!parts) return;
+        const d = parseKey(parts.dateKey);
+        if(d < APP_START || d > APP_END) return; // out of range, skip
+        if(!state.events[parts.dateKey]) state.events[parts.dateKey]=[];
+        state.events[parts.dateKey].push({
+          id: uid(), time: parts.time||'00:00', title: p.title,
+          desc: p.desc, type: 'bt-other', calId
+        });
+        count++;
+      });
+      state.calendars.push({id:calId, name:file.name.replace('.ics',''), color, count});
+      saveAll();
+      refreshAll();
+      showToast(`${count} gebeurtenissen geïmporteerd!`);
+    }catch(err){
+      showToast('Kon bestand niet lezen — is het een geldig .ics bestand?', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function escapeICS(s){
+  return (s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+}
+
+function exportICS(){
+  let lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Mijn Planner//NL','CALSCALE:GREGORIAN'];
+  // regular events
+  Object.keys(state.events).forEach(key=>{
+    state.events[key].forEach(e=>{
+      if(e.hidden) return;
+      const d = key.replace(/-/g,'');
+      const t = (e.time||'00:00').replace(':','')+'00';
+      lines.push('BEGIN:VEVENT');
+      lines.push('UID:'+(e.id||uid())+'@mijnplanner');
+      lines.push('DTSTART:'+d+'T'+t);
+      lines.push('SUMMARY:'+escapeICS(e.title));
+      if(e.desc) lines.push('DESCRIPTION:'+escapeICS(e.desc));
+      lines.push('END:VEVENT');
+    });
+  });
+  // expand recurring across full range
+  state.recurring.forEach(r=>{
+    const start = r.startDate?parseKey(r.startDate):APP_START;
+    const end = r.endDate?parseKey(r.endDate):APP_END;
+    let d = new Date(start);
+    while(d<=end){
+      if(d.getDay()===r.weekday){
+        const key = dateKey(d);
+        const dd = key.replace(/-/g,'');
+        const t = (r.time||'00:00').replace(':','')+'00';
+        lines.push('BEGIN:VEVENT');
+        lines.push('UID:rec_'+r.id+'_'+key+'@mijnplanner');
+        lines.push('DTSTART:'+dd+'T'+t);
+        lines.push('SUMMARY:'+escapeICS(r.title));
+        if(r.desc) lines.push('DESCRIPTION:'+escapeICS(r.desc));
+        lines.push('END:VEVENT');
+      }
+      d = addDays(d,1);
+    }
+  });
+  lines.push('END:VCALENDAR');
+  const blob = new Blob([lines.join('\r\n')], {type:'text/calendar'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mijn-planner.ics';
+  a.click();
+  showToast('Geëxporteerd als .ics!');
+}
+
+/* ══════════════ SEED DATA (eerdere planning) ══════════════ */
+function seedIfEmpty(){
+  const hasData = Object.keys(state.events).length>0 || state.recurring.length>0;
+  if(hasData) return;
+
+  const RUN = {
+    act:'5 min inlopen op stapvoets. 15 min rustig praattempo (~5:30-5:45/km) — voelt langzaam t.o.v. je 4:30/km basis, dat is de bedoeling. 5 min uitlopen + rekken.',
+    duur:'5 min inlopen wandelen/draf. 18-20 min comfortabel tempo (~5:00-5:15/km). 5 min uitlopen + heupflexoren rekken.',
+    tempo:'5 min rustig inlopen (~5:30/km). 20 min op 4:45-5:00/km — voel hoe comfortabel dit is na de rust. 5 min uitlopen + rekken. Als 4:50/km comfortabel aanvoelt is sub-48 haalbaar.',
+    taper:'12 min rustig inlopen. 4x 20 sec strides (licht versnellen, niet sprinten, 60 sec wandelen ertussen). 8 min rustig uitlopen + rekken.',
+    warmup:'8 min rustig inlopen. 2x 20 sec lichte versnellingen. 2 min rustig wandelen naar de startlijn. Ga naar het midden/achterste startblok.',
+    race:'Sub-50 (4:59/km): begin op 5:00/km, vasthouden t/m km 7. Sub-48 droomdoel (4:47/km): begin op 4:50/km. Km 1-2: bewust rem houden, niet sneller dan 4:55-5:00/km. Km 3-5: in je ritme, naar 4:50/km. Km 6-7: check-in, energie? naar 4:45/km. Km 8-9: mentale kilometers, kleine stapjes. Km 10: alles eruit naar 4:30/km. Drink bij elk waterstation.'
+  };
+
+  const seed = {
+    '2026-06-27':[
+      {id:uid(),time:'00:00',title:'Slapen',type:'bt-sleep'},
+      {id:uid(),time:'08:30',title:'Opstaan & ontbijt',type:'bt-wake'},
+      {id:uid(),time:'09:00',title:'Leren – blok 1',desc:'Geschiedenis + Frans · 2 uur',type:'bt-learn'},
+      {id:uid(),time:'11:00',title:'Pauze',type:'bt-free'},
+      {id:uid(),time:'11:30',title:'Leren – blok 2',desc:'Wiskunde + aardrijkskunde · 1,5 uur',type:'bt-learn'},
+      {id:uid(),time:'12:30',title:'Lunch',type:'bt-free'},
+      {id:uid(),time:'13:00',title:'Afspreken',desc:'Tot 22:00',type:'bt-social'},
+      {id:uid(),time:'22:00',title:'Thuiskomen',type:'bt-free'},
+      {id:uid(),time:'22:15',title:'Hardlopen – activering',desc:RUN.act,type:'bt-run'},
+      {id:uid(),time:'23:00',title:'Slapen',type:'bt-sleep'},
+    ],
+    '2026-06-28':[
+      {id:uid(),time:'00:00',title:'Slapen',type:'bt-sleep'},
+      {id:uid(),time:'08:00',title:'Opstaan & ontbijt',type:'bt-wake'},
+      {id:uid(),time:'08:30',title:'Leren – ochtendblok',desc:'Geschiedenis + Frans herhalen · 2 uur',type:'bt-learn'},
+      {id:uid(),time:'10:30',title:'Hardlopen – duurloop',desc:RUN.duur,type:'bt-run'},
+      {id:uid(),time:'11:15',title:'Leren – blok 2',desc:'Wiskunde / econ · 1,5 uur',type:'bt-learn'},
+      {id:uid(),time:'12:45',title:'Lunch & klaarmaken',type:'bt-free'},
+      {id:uid(),time:'13:00',title:'Verjaardag zusje',desc:'Tot 22:00',type:'bt-birthday'},
+      {id:uid(),time:'22:00',title:'Thuiskomen',type:'bt-free'},
+      {id:uid(),time:'23:00',title:'Slapen',type:'bt-sleep'},
+    ],
+    '2026-06-29':[
+      {id:uid(),time:'00:00',title:'Slapen',type:'bt-sleep'},
+      {id:uid(),time:'07:00',title:'Opstaan & ontbijt',type:'bt-wake'},
+      {id:uid(),time:'07:15',title:'Leren – ochtend',desc:'Geschiedenis + Frans snelle herhaling · 1,5 uur',type:'bt-learn'},
+      {id:uid(),time:'08:00',title:'Fietsen naar school',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'08:30',title:'LO · LO · Nederlands · Economie',desc:'a105 / a070',type:'bt-school'},
+      {id:uid(),time:'12:15',title:'Frans valt uit',desc:'Vrij uur',type:'bt-free'},
+      {id:uid(),time:'14:20',title:'Wiskunde',desc:'a216',type:'bt-school'},
+      {id:uid(),time:'15:10',title:'Fietsen naar huis',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'15:45',title:'Eten & bijkomen',type:'bt-free'},
+      {id:uid(),time:'16:15',title:'Leren – blok 1',desc:'Wiskunde + aardrijkskunde · 2,5 uur',type:'bt-learn'},
+      {id:uid(),time:'18:45',title:'Avondeten',type:'bt-free'},
+      {id:uid(),time:'19:30',title:'Leren – blok 2',desc:'Vervolg · rest van 5 uur totaal',type:'bt-learn'},
+      {id:uid(),time:'21:00',title:'Content project',desc:'30-45 min',type:'bt-content'},
+      {id:uid(),time:'22:30',title:'Slapen',type:'bt-sleep'},
+    ],
+    '2026-06-30':[
+      {id:uid(),time:'00:00',title:'Slapen',type:'bt-sleep'},
+      {id:uid(),time:'07:00',title:'Opstaan & ontbijt',type:'bt-wake'},
+      {id:uid(),time:'07:15',title:'Snelle herhaling',desc:'Geschiedenis + Frans · 45 min',type:'bt-learn'},
+      {id:uid(),time:'08:00',title:'Fietsen naar school',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'08:30',title:'TOETS Geschiedenis',desc:'a211',type:'bt-exam'},
+      {id:uid(),time:'09:30',title:'TOETS Frans',desc:'a211',type:'bt-exam'},
+      {id:uid(),time:'11:30',title:'Fietsen naar huis',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'12:00',title:'Lunch',type:'bt-free'},
+      {id:uid(),time:'12:30',title:'Leren – blok 1',desc:'Wiskunde + econ · 2,5 uur',type:'bt-learn'},
+      {id:uid(),time:'15:30',title:'Leren – blok 2',desc:'Aardrijkskunde · 2,5 uur',type:'bt-learn'},
+      {id:uid(),time:'18:00',title:'Avondeten',type:'bt-free'},
+      {id:uid(),time:'19:00',title:'Content project',desc:'45 min',type:'bt-content'},
+      {id:uid(),time:'20:00',title:'Hardlopen – tempogevoelloop',desc:RUN.tempo,type:'bt-run'},
+      {id:uid(),time:'22:30',title:'Slapen',type:'bt-sleep'},
+    ],
+    '2026-07-01':[
+      {id:uid(),time:'00:00',title:'Slapen',type:'bt-sleep'},
+      {id:uid(),time:'07:00',title:'Opstaan & ontbijt',type:'bt-wake'},
+      {id:uid(),time:'07:15',title:'Herhaling ochtend',desc:'Wiskunde + economie · 1 uur',type:'bt-learn'},
+      {id:uid(),time:'08:15',title:'Fietsen naar school',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'10:50',title:'TOETS Wiskunde',desc:'a105',type:'bt-exam'},
+      {id:uid(),time:'11:50',title:'TOETS Economie',desc:'a105',type:'bt-exam'},
+      {id:uid(),time:'13:00',title:'Fietsen naar huis',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'13:30',title:'Lunch',type:'bt-free'},
+      {id:uid(),time:'14:00',title:'Leren – blok 1',desc:'Aardrijkskunde + Engels · 2,5 uur',type:'bt-learn'},
+      {id:uid(),time:'17:00',title:'Leren – blok 2',desc:'Vervolg · 2,5 uur',type:'bt-learn'},
+      {id:uid(),time:'19:30',title:'Avondeten',type:'bt-free'},
+      {id:uid(),time:'20:30',title:'Content project',desc:'45 min',type:'bt-content'},
+      {id:uid(),time:'22:30',title:'Slapen',type:'bt-sleep'},
+    ],
+    '2026-07-02':[
+      {id:uid(),time:'00:00',title:'Slapen',type:'bt-sleep'},
+      {id:uid(),time:'07:00',title:'Opstaan & ontbijt',type:'bt-wake'},
+      {id:uid(),time:'07:15',title:'Laatste herhaling aardrijkskunde',desc:'2 uur',type:'bt-learn'},
+      {id:uid(),time:'08:00',title:'CP H4 en H5',type:'bt-school'},
+      {id:uid(),time:'09:15',title:'Fietsen naar school',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'10:50',title:'TOETS Aardrijkskunde',desc:'a054',type:'bt-exam'},
+      {id:uid(),time:'12:00',title:'Fietsen naar huis',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'13:00',title:'De hele dag weg',desc:'Tot ~02:00 vrijdagnacht',type:'bt-away'},
+      {id:uid(),time:'02:00',title:'Laat thuis & slapen',type:'bt-sleep'},
+    ],
+    '2026-07-03':[
+      {id:uid(),time:'08:30',title:'Opstaan',type:'bt-wake'},
+      {id:uid(),time:'08:45',title:'Snelle herhaling Engels',desc:'~1 uur',type:'bt-learn'},
+      {id:uid(),time:'10:00',title:'Fietsen naar school',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'11:00',title:'TOETS Engels',desc:'a005',type:'bt-exam'},
+      {id:uid(),time:'12:30',title:'Fietsen naar huis',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'13:00',title:'Leren – middag blok 1',desc:'Duits + scheikunde + Nederlands · 2 uur',type:'bt-learn'},
+      {id:uid(),time:'15:00',title:'Eten & bijkomen',type:'bt-free'},
+      {id:uid(),time:'16:00',title:'Leren – blok 2',desc:'Vervolg · 2 uur',type:'bt-learn'},
+      {id:uid(),time:'18:00',title:'Content project',desc:'45 min',type:'bt-content'},
+      {id:uid(),time:'21:30',title:'Vroeg slapen (inhalen)',type:'bt-sleep'},
+    ],
+    '2026-07-04':[
+      {id:uid(),time:'08:00',title:'Opstaan & rustig ontbijt',type:'bt-wake'},
+      {id:uid(),time:'08:30',title:'Leren – blok 1',desc:'Duits + scheikunde · 2,5 uur',type:'bt-learn'},
+      {id:uid(),time:'11:30',title:'Leren – blok 2',desc:'Nederlands · 1,5 uur',type:'bt-learn'},
+      {id:uid(),time:'13:00',title:'Lunch – koolhydraatrijk',type:'bt-free'},
+      {id:uid(),time:'14:00',title:'Hardlopen – taper strides',desc:RUN.taper,type:'bt-run'},
+      {id:uid(),time:'14:45',title:'Content project',desc:'45 min',type:'bt-content'},
+      {id:uid(),time:'15:30',title:'Rust · kleding & spullen klaarzetten',type:'bt-free'},
+      {id:uid(),time:'18:00',title:'Avondeten – licht en vertrouwd',type:'bt-free'},
+      {id:uid(),time:'21:30',title:'Vroeg slapen — race om 10:00!',type:'bt-sleep'},
+    ],
+    '2026-07-05':[
+      {id:uid(),time:'07:30',title:'Opstaan',desc:'2,5 uur voor de start',type:'bt-wake'},
+      {id:uid(),time:'07:45',title:'Ontbijt – licht & vertrouwd',desc:'Banaan + boterham + water',type:'bt-free'},
+      {id:uid(),time:'09:00',title:'Reizen naar Noordwijk',type:'bt-free'},
+      {id:uid(),time:'09:30',title:'Inlopen + warmup',desc:RUN.warmup,type:'bt-run'},
+      {id:uid(),time:'10:00',title:'10 van Noordwijk — START',desc:RUN.race,type:'bt-race'},
+      {id:uid(),time:'11:00',title:'Na de race — bijkomen',type:'bt-free'},
+      {id:uid(),time:'13:00',title:'Strand',desc:'Vrije middag · tot 19:30',type:'bt-beach'},
+      {id:uid(),time:'19:30',title:'Avondeten',type:'bt-free'},
+      {id:uid(),time:'20:30',title:'Leren – avond',desc:'Duits + scheikunde + Nederlands · ~2 uur',type:'bt-learn'},
+      {id:uid(),time:'22:30',title:'Slapen',type:'bt-sleep'},
+    ],
+    '2026-07-06':[
+      {id:uid(),time:'07:00',title:'Opstaan & ontbijt',type:'bt-wake'},
+      {id:uid(),time:'07:15',title:'Herhaling Duits',desc:'1,5 uur',type:'bt-learn'},
+      {id:uid(),time:'08:45',title:'Fietsen naar school',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'10:50',title:'TOETS Duits',desc:'a122',type:'bt-exam'},
+      {id:uid(),time:'12:00',title:'Fietsen naar huis',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'13:00',title:'Leren – blok 1',desc:'Scheikunde + Nederlands · 2,5 uur',type:'bt-learn'},
+      {id:uid(),time:'16:00',title:'Leren – blok 2',desc:'Vervolg · 2,5 uur',type:'bt-learn'},
+      {id:uid(),time:'18:30',title:'Avondeten',type:'bt-free'},
+      {id:uid(),time:'19:30',title:'Content project',desc:'45 min',type:'bt-content'},
+      {id:uid(),time:'22:30',title:'Slapen',type:'bt-sleep'},
+    ],
+    '2026-07-07':[
+      {id:uid(),time:'07:00',title:'Opstaan & ontbijt',type:'bt-wake'},
+      {id:uid(),time:'07:15',title:'Herhaling Scheikunde + Nederlands',desc:'1,5 uur',type:'bt-learn'},
+      {id:uid(),time:'08:45',title:'Fietsen naar school',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'10:50',title:'TOETS Scheikunde',desc:'a212',type:'bt-exam'},
+      {id:uid(),time:'11:50',title:'TOETS Nederlands',desc:'a212',type:'bt-exam'},
+      {id:uid(),time:'13:00',title:'Fietsen naar huis',desc:'~30 min',type:'bt-bike'},
+      {id:uid(),time:'13:30',title:'Lunch & even bijkomen',type:'bt-free'},
+      {id:uid(),time:'14:00',title:'Vertrek naar Bruno Mars',desc:'Geen leren meer — toetsenweek voorbij!',type:'bt-concert'},
+      {id:uid(),time:'23:59',title:'Bruno Mars – genieten!',type:'bt-concert'},
+    ],
+  };
+  Object.assign(state.events, seed);
+  saveAll();
+}
+
+/* ══════════════ LIVE KLOK (Amsterdam) ══════════════ */
+function tickClock(){
+  const n = nowAmsterdam();
+  const el = document.getElementById('clockText');
+  if(el) el.textContent = `🕐 ${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+/* Refresh views automatically when day changes at midnight */
+let lastSeenDateKey = todayKey();
+setInterval(()=>{
+  const k = todayKey();
+  if(k !== lastSeenDateKey){
+    lastSeenDateKey = k;
+    refreshAll();
+  }
+}, 30000);
+
+/* ══════════════ TIMER ══════════════ */
+let timerInterval = null;
+let timerEndAt = null;
+let timerPausedRemaining = null;
+let timerTotalSeconds = 0;
+let timerLabel = '';
+
+const TIMER_PRESETS = [
+  {label:'Schooluur (50 min)', sec:50*60},
+  {label:'Pauze (10 min)', sec:10*60},
+  {label:'Leerblok (25 min)', sec:25*60},
+  {label:'Korte pauze (5 min)', sec:5*60},
+  {label:'Hardlopen (30 min)', sec:30*60},
+  {label:'1 uur', sec:60*60},
+];
+
+function openTimerModal(){
+  openModal(`
+    <h3>Timer instellen</h3>
+    <div class="form-group"><label>Snelkeuze</label>
+      <div class="timer-presets">
+        ${TIMER_PRESETS.map(p=>`<button onclick="startTimerPreset(${p.sec},'${p.label}')">${p.label}</button>`).join('')}
+      </div>
+    </div>
+    <div class="form-group"><label>Eigen tijd (minuten)</label><input type="number" id="timer-custom-min" min="1" value="25"></div>
+    <div class="form-group"><label>Label</label><input type="text" id="timer-custom-label" placeholder="Bijv. School, Huiswerk..." value="Timer"></div>
+    <div class="modal-btns">
+      <button class="primary" onclick="startCustomTimer()">Starten</button>
+      <button onclick="closeModal()">Annuleren</button>
+    </div>
+  `);
+}
+
+function startTimerPreset(sec,label){
+  closeModal();
+  startTimer(sec,label);
+}
+function startCustomTimer(){
+  const min = parseInt(document.getElementById('timer-custom-min').value,10)||25;
+  const label = document.getElementById('timer-custom-label').value||'Timer';
+  closeModal();
+  startTimer(min*60,label);
+}
+
+function startTimer(totalSeconds, label){
+  clearInterval(timerInterval);
+  timerTotalSeconds = totalSeconds;
+  timerLabel = label;
+  timerEndAt = Date.now() + totalSeconds*1000;
+  timerPausedRemaining = null;
+  document.getElementById('timerFab').classList.add('show');
+  document.getElementById('tfLabel').textContent = label;
+  document.getElementById('tfPauseBtn').textContent = '⏸';
+  updateTimerDisplay();
+  timerInterval = setInterval(updateTimerDisplay, 1000);
+  showToast('Timer gestart: '+label);
+}
+
+function updateTimerDisplay(){
+  const remainingMs = timerPausedRemaining!==null ? timerPausedRemaining : (timerEndAt - Date.now());
+  const remaining = Math.max(0, Math.round(remainingMs/1000));
+  const m = Math.floor(remaining/60), s = remaining%60;
+  const el = document.getElementById('tfTime');
+  el.textContent = `${pad(m)}:${pad(s)}`;
+  el.classList.toggle('warn', remaining<=60 && remaining>0);
+  el.classList.toggle('done', remaining===0);
+  if(remaining===0 && timerPausedRemaining===null){
+    clearInterval(timerInterval);
+    showToast(`⏰ ${timerLabel} is afgelopen!`);
+    try{
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880; g.gain.value = 0.15;
+      o.start(); setTimeout(()=>o.stop(), 600);
+    }catch(e){}
+  }
+}
+
+function pauseResumeTimer(){
+  const btn = document.getElementById('tfPauseBtn');
+  if(timerPausedRemaining===null){
+    timerPausedRemaining = timerEndAt - Date.now();
+    clearInterval(timerInterval);
+    btn.textContent = '▶';
+  } else {
+    timerEndAt = Date.now() + timerPausedRemaining;
+    timerPausedRemaining = null;
+    timerInterval = setInterval(updateTimerDisplay, 1000);
+    btn.textContent = '⏸';
+  }
+}
+
+function stopTimer(){
+  clearInterval(timerInterval);
+  document.getElementById('timerFab').classList.remove('show');
+}
+
+/* ══════════════ WEER — Open-Meteo, Noordwijkerhout, elke 3 uur ══════════════ */
+const NWH_LAT_DEFAULT = 52.2486, NWH_LON_DEFAULT = 4.5083;
+const WX_ICONS = {
+  0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',
+  51:'🌦',53:'🌦',55:'🌧',56:'🌧',57:'🌧',
+  61:'🌧',63:'🌧',65:'🌧',66:'🌧',67:'🌧',
+  71:'🌨',73:'🌨',75:'❄️',77:'❄️',
+  80:'🌦',81:'🌧',82:'⛈',85:'🌨',86:'❄️',
+  95:'⛈',96:'⛈',99:'⛈'
+};
+let weatherCache = null;
+
+/* Topbar: huidig weer, altijd zichtbaar ongeacht pagina, ververst elke 15 min */
+async function fetchTopbarWeather(){
+  const el = document.getElementById('topbarWeather');
+  if(el) el.textContent = 'weer laden...';
+  try{
+    const lat = settings.lat ?? NWH_LAT_DEFAULT;
+    const lon = settings.lon ?? NWH_LON_DEFAULT;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode,precipitation_probability&timezone=Europe%2FAmsterdam&forecast_hours=10`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('fetch failed: '+res.status);
+    const data = await res.json();
+    if(!data.hourly || !data.hourly.time || data.hourly.time.length===0) throw new Error('no hourly data');
+
+    const nowKey = todayKey();
+    const nowH = nowAmsterdam().getHours();
+    const futureIdx = data.hourly.time
+      .map((t,i)=>({t,i}))
+      .filter(x=> !(x.t.slice(0,10)===nowKey && parseInt(x.t.slice(11,13),10)<nowH));
+
+    // group into three 3-hour windows
+    const windows = [futureIdx.slice(0,3), futureIdx.slice(3,6), futureIdx.slice(6,9)];
+    const blocks = windows.map(w=>{
+      if(w.length===0) return null;
+      const temps = w.map(x=>data.hourly.temperature_2m[x.i]);
+      const rains = w.map(x=>data.hourly.precipitation_probability[x.i]);
+      const codes = w.map(x=>data.hourly.weathercode[x.i]);
+      const avgTemp = Math.round(temps.reduce((a,b)=>a+b,0)/temps.length);
+      const maxRain = Math.max(...rains);
+      const midCode = codes[Math.floor(codes.length/2)];
+      const icon = WX_ICONS[midCode] ?? '🌡';
+      const startLabel = w[0].t.slice(11,16);
+      const endLabel = w[w.length-1].t.slice(11,16);
+      return `<span style="display:flex;align-items:center;gap:.25rem" title="${startLabel}–${endLabel}">${icon} ${avgTemp}°<span style="color:var(--blue)">💧${maxRain}%</span></span>`;
+    }).filter(Boolean);
+
+    let html = blocks.join('<span style="color:var(--border2)">|</span>');
+    if(!html) html = 'geen voorspelling beschikbaar';
+    if(el) el.innerHTML = html;
+  }catch(e){
+    if(el) el.textContent = 'weer niet beschikbaar';
+    console.warn('Weather fetch failed:', e);
+  }
+}
+fetchTopbarWeather();
+setInterval(fetchTopbarWeather, 15*60*1000);
+
+async function fetchWeatherForDate(d){
+  const key = dateKey(d);
+  if(weatherCache && weatherCache.key===key){ renderWeatherStrip(weatherCache.data); return; }
+  const wxEl = document.getElementById('weatherStrip');
+  if(wxEl) wxEl.innerHTML = `<div class="wx-loading">Weer laden voor Noordwijkerhout...</div>`;
+  try{
+    const lat = settings.lat ?? NWH_LAT_DEFAULT;
+    const lon = settings.lon ?? NWH_LON_DEFAULT;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode,precipitation_probability&timezone=Europe%2FAmsterdam&start_date=${key}&end_date=${key}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('weather fetch failed');
+    const data = await res.json();
+    weatherCache = {key, data};
+    renderWeatherStrip(data);
+  }catch(e){
+    if(wxEl) wxEl.innerHTML = `<div class="wx-loading">Weer kon niet geladen worden (geen internetverbinding of buiten bereik van de gratis voorspelling — Open-Meteo geeft ~16 dagen vooruit).</div>`;
+  }
+}
+
+function renderWeatherStrip(data){
+  const wxEl = document.getElementById('weatherStrip');
+  if(!wxEl || !data.hourly) return;
+  const times = data.hourly.time;
+  const temps = data.hourly.temperature_2m;
+  const codes = data.hourly.weathercode;
+  const precip = data.hourly.precipitation_probability;
+  let html = '';
+  for(let h=0; h<24; h+=3){
+    if(h>=times.length) break;
+    const t = times[h].slice(11,16);
+    const icon = WX_ICONS[codes[h]] || '🌡';
+    html += `<div class="wx-item">
+      <div class="wx-time">${t}</div>
+      <div class="wx-icon">${icon}</div>
+      <div class="wx-temp">${Math.round(temps[h])}°</div>
+      <div>${precip[h]}%</div>
+    </div>`;
+  }
+  wxEl.innerHTML = html || `<div class="wx-loading">Geen weerdata beschikbaar voor deze datum (te ver in verleden of toekomst).</div>`;
+}
+
+/* ══════════════ ROOSTER PRINTEN/DOWNLOADEN ══════════════ */
+function downloadRoosterPDF(){
+  openModal(`
+    <h3>Rooster downloaden / printen</h3>
+    <div class="form-group"><label>Periode</label>
+      <select id="print-range">
+        <option value="dag">Huidige dag</option>
+        <option value="week" selected>Huidige week</option>
+        <option value="maand">Huidige maand</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="primary" onclick="generatePrintView()">Genereer &amp; print</button>
+      <button onclick="closeModal()">Annuleren</button>
+    </div>
+  `);
+}
+
+function generatePrintView(){
+  const range = document.getElementById('print-range').value;
+  let days = [];
+  let title = '';
+  if(range==='dag'){
+    days = [viewDate];
+    title = `${DAY_NAMES[viewDate.getDay()]} ${viewDate.getDate()} ${MONTH_NAMES[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
+  } else if(range==='week'){
+    const start = getWeekStart(viewDate);
+    days = Array.from({length:7},(_,i)=>addDays(start,i));
+    title = `Week van ${start.getDate()} ${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()}`;
+  } else {
+    const year=viewDate.getFullYear(), month=viewDate.getMonth();
+    const numDays = new Date(year,month+1,0).getDate();
+    days = Array.from({length:numDays},(_,i)=>new Date(year,month,i+1));
+    title = `${MONTH_NAMES[month]} ${year}`;
+  }
+  closeModal();
+
+  let body = `<html><head><meta charset="UTF-8"><title>Rooster — ${title}</title><style>
+    body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:20px;max-width:900px;margin:0 auto}
+    h1{font-size:20px;margin-bottom:4px}
+    .sub{color:#666;font-size:12px;margin-bottom:20px}
+    .day-block{margin-bottom:18px;page-break-inside:avoid}
+    .day-block h2{font-size:14px;border-bottom:2px solid #333;padding-bottom:4px;margin-bottom:6px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    td{padding:4px 8px;border-bottom:1px solid #ddd;vertical-align:top}
+    td.time{width:60px;font-weight:bold;color:#333}
+    td.title{font-weight:600}
+    td.desc{color:#666;font-size:11px}
+    .empty{color:#999;font-style:italic;font-size:12px}
+    @media print{ body{padding:0} }
+  </style></head><body>
+  <h1>Rooster</h1>
+  <div class="sub">${title} — gegenereerd op ${dateKey(nowAmsterdam())}</div>`;
+
+  days.forEach(d=>{
+    const events = getEventsForDate(d).filter(e=>!e.hidden);
+    body += `<div class="day-block"><h2>${DAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}</h2>`;
+    if(events.length===0){
+      body += `<div class="empty">Geen gebeurtenissen.</div>`;
+    } else {
+      body += `<table>`;
+      events.forEach(e=>{
+        body += `<tr><td class="time">${e.time||''}</td><td class="title">${e.title}</td><td class="desc">${e.desc||''}</td></tr>`;
+      });
+      body += `</table>`;
+    }
+    body += `</div>`;
+  });
+  body += `</body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(body);
+  w.document.close();
+  setTimeout(()=>w.print(), 400);
+}
+
+/* ══════════════ SUPABASE CONFIGURATIE ══════════════ */
+/* VUL HIER JE EIGEN SUPABASE GEGEVENS IN — zie SUPABASE_SETUP.md voor instructies */
+const SUPABASE_URL = 'VUL_HIER_JE_SUPABASE_URL_IN';
+const SUPABASE_ANON_KEY = 'VUL_HIER_JE_SUPABASE_ANON_KEY_IN';
+
+const SUPABASE_CONFIGURED = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.length > 20;
+let supabaseClient = null;
+if(SUPABASE_CONFIGURED && window.supabase){
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+/* ══════════════ ACCOUNT SYSTEEM (Supabase Auth) ══════════════ */
+const THEMES = {
+  dark:    {bg:'#0f1117',surface:'#171b26',surface2:'#1e2336',border:'#252b3b',border2:'#303654',text:'#dde3f0',muted:'#8892a8',dim:'#5a6078'},
+  midnight:{bg:'#080a12',surface:'#11141f',surface2:'#171b2a',border:'#1e2333',border2:'#272d42',text:'#e4e8f5',muted:'#7a85a0',dim:'#4a5268'},
+  forest:  {bg:'#0c1410',surface:'#141f18',surface2:'#1a2820',border:'#22332a',border2:'#2c4336',text:'#dcebe2',muted:'#82a092',dim:'#4f6358'},
+  warm:    {bg:'#1a1410',surface:'#241c16',surface2:'#2e251d',border:'#3a2f24',border2:'#473a2c',text:'#f0e6da',muted:'#a89580',dim:'#6b5c4a'},
+  light:   {bg:'#f4f5f8',surface:'#ffffff',surface2:'#eef0f5',border:'#dde1ea',border2:'#c8cedb',text:'#1c2030',muted:'#5c6478',dim:'#9aa1b5'},
+};
+const THEME_LABELS = {dark:'Donker (standaard)', midnight:'Middernacht', forest:'Bos', warm:'Warm', light:'Licht'};
+
+const LOCATION_PRESETS = [
+  {name:'Noordwijkerhout', lat:52.2486, lon:4.5083},
+  {name:'Amsterdam', lat:52.3676, lon:4.9041},
+  {name:'Rotterdam', lat:51.9244, lon:4.4777},
+  {name:'Den Haag', lat:52.0705, lon:4.3007},
+  {name:'Utrecht', lat:52.0907, lon:5.1214},
+  {name:'Noordwijk', lat:52.2386, lon:4.4399},
+];
+
+let account = null; // {id, email, name} from Supabase session
+let settings = { theme:'dark', locationName:'Noordwijkerhout', lat:NWH_LAT_DEFAULT, lon:NWH_LON_DEFAULT };
+
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem('mijn_planner_settings');
+    if(raw) settings = Object.assign(settings, JSON.parse(raw));
+  }catch(e){}
+}
+function saveSettings(){
+  localStorage.setItem('mijn_planner_settings', JSON.stringify(settings));
+}
+
+function showView(viewId){
+  ['loginNotConfigured','loginSignupView','loginSigninView','loginResetView','loginNewPasswordView','loginCheckingSession']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display = (id===viewId?'block':'none'); });
+}
+function showSignupView(){ showView('loginSignupView'); }
+function showLoginView(){ showView('loginSigninView'); }
+function showResetView(){ showView('loginResetView'); }
+
+async function initAccountGate(){
+  loadSettings();
+  applyTheme(settings.theme);
+
+  if(!SUPABASE_CONFIGURED){
+    showView('loginNotConfigured');
+    return;
+  }
+
+  showView('loginCheckingSession');
+
+  // check if this is a password-recovery redirect
+  const hash = window.location.hash;
+  if(hash.includes('type=recovery')){
+    showView('loginNewPasswordView');
+    return;
+  }
+
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if(session && session.user){
+    account = { id: session.user.id, email: session.user.email, name: session.user.user_metadata?.name || session.user.email.split('@')[0] };
+    enterApp();
+  } else {
+    showView('loginSigninView');
+  }
+}
+
+async function signUp(){
+  const name = document.getElementById('acc-name').value.trim();
+  const email = document.getElementById('acc-email').value.trim();
+  const pass = document.getElementById('acc-pass').value;
+  if(!name){ showToast('Vul een naam in', true); return; }
+  if(!email){ showToast('Vul een e-mailadres in', true); return; }
+  if(pass.length<6){ showToast('Wachtwoord moet minstens 6 tekens zijn', true); return; }
+  const btn = document.getElementById('signupBtn');
+  btn.textContent = 'Bezig...'; btn.disabled = true;
+  const { data, error } = await supabaseClient.auth.signUp({
+    email, password: pass, options: { data: { name } }
+  });
+  btn.textContent = 'Account aanmaken'; btn.disabled = false;
+  if(error){ showToast(error.message, true); return; }
+  showToast('Check je mail om je account te bevestigen!');
+  showLoginView();
+}
+
+async function signIn(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display='none';
+  if(!email || !pass){ errEl.textContent='Vul e-mail en wachtwoord in.'; errEl.style.display='block'; return; }
+  const btn = document.getElementById('signinBtn');
+  btn.textContent = 'Bezig...'; btn.disabled = true;
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+  btn.textContent = 'Inloggen'; btn.disabled = false;
+  if(error){
+    errEl.textContent = error.message.includes('Invalid') ? 'Onjuist e-mailadres of wachtwoord.' : error.message;
+    errEl.style.display='block';
+    return;
+  }
+  account = { id: data.user.id, email: data.user.email, name: data.user.user_metadata?.name || data.user.email.split('@')[0] };
+  enterApp();
+}
+
+async function sendResetEmail(){
+  const email = document.getElementById('reset-email').value.trim();
+  if(!email){ showToast('Vul je e-mailadres in', true); return; }
+  const btn = document.getElementById('resetBtn');
+  btn.textContent = 'Bezig...'; btn.disabled = true;
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href.split('#')[0]
+  });
+  btn.textContent = 'Stuur herstellink'; btn.disabled = false;
+  if(error){ showToast(error.message, true); return; }
+  document.getElementById('resetMsg').style.display='block';
+}
+
+async function updatePasswordAfterReset(){
+  const pass = document.getElementById('newpw-pass').value;
+  if(pass.length<6){ showToast('Wachtwoord moet minstens 6 tekens zijn', true); return; }
+  const { data, error } = await supabaseClient.auth.updateUser({ password: pass });
+  if(error){ showToast(error.message, true); return; }
+  showToast('Wachtwoord ingesteld! Je bent ingelogd.');
+  account = { id: data.user.id, email: data.user.email, name: data.user.user_metadata?.name || data.user.email.split('@')[0] };
+  window.location.hash = '';
+  enterApp();
+}
+
+async function enterApp(){
+  document.getElementById('loginGate').style.display='none';
+  document.getElementById('appRoot').style.display='block';
+  await loadAll();
+  seedIfEmpty();
+  goToToday();
+  switchPage('dag');
+}
+
+async function logout(){
+  closeModal();
+  await supabaseClient.auth.signOut();
+  account = null;
+  document.getElementById('appRoot').style.display='none';
+  document.getElementById('loginGate').style.display='flex';
+  showLoginView();
+}
+
+/* ══════════════ THEMA ══════════════ */
+
+function applyTheme(themeKey){
+  const t = THEMES[themeKey] || THEMES.dark;
+  const root = document.documentElement;
+  root.style.setProperty('--bg', t.bg);
+  root.style.setProperty('--surface', t.surface);
+  root.style.setProperty('--surface2', t.surface2);
+  root.style.setProperty('--border', t.border);
+  root.style.setProperty('--border2', t.border2);
+  root.style.setProperty('--text', t.text);
+  root.style.setProperty('--muted', t.muted);
+  root.style.setProperty('--dim', t.dim);
+  settings.theme = themeKey;
+}
+
+/* ══════════════ INSTELLINGEN MODAL ══════════════ */
+function openSettingsModal(){
+  openModal(`
+    <h3>Instellingen</h3>
+
+    <div style="margin-bottom:1.4rem">
+      <label style="display:block;font-size:.72rem;color:var(--muted);margin-bottom:.5rem">Account</label>
+      <div style="background:var(--surface2);border-radius:8px;padding:.7rem .9rem;display:flex;align-items:center;gap:.7rem">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif">${account?account.name.charAt(0).toUpperCase():'?'}</div>
+        <div style="flex:1">
+          <div style="font-size:.85rem">${account?account.name:''}</div>
+          <div style="font-size:.68rem;color:var(--muted)">${account?account.email:''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.4rem;margin-top:.6rem">
+        <button onclick="openChangeNameModal()" style="flex:1;font-size:.72rem">Naam wijzigen</button>
+        <button onclick="openChangeCodeModal()" style="flex:1;font-size:.72rem">Wachtwoord wijzigen</button>
+      </div>
+      <button class="danger" onclick="logout()" style="width:100%;margin-top:.4rem;font-size:.72rem">Uitloggen</button>
+    </div>
+
+    <div style="margin-bottom:1.4rem">
+      <label style="display:block;font-size:.72rem;color:var(--muted);margin-bottom:.5rem">App thema</label>
+      <select id="theme-select" onchange="previewTheme(this.value)" style="width:100%">
+        ${Object.keys(THEMES).map(k=>`<option value="${k}"${settings.theme===k?' selected':''}>${THEME_LABELS[k]}</option>`).join('')}
+      </select>
+    </div>
+
+    <div style="margin-bottom:.5rem">
+      <label style="display:block;font-size:.72rem;color:var(--muted);margin-bottom:.5rem">Locatie (tijd &amp; weer)</label>
+      <select id="location-preset" onchange="onLocationPresetChange(this.value)" style="width:100%;margin-bottom:.5rem">
+        ${LOCATION_PRESETS.map(l=>`<option value="${l.name}"${settings.locationName===l.name?' selected':''}>${l.name}</option>`).join('')}
+        <option value="__custom__"${!LOCATION_PRESETS.some(l=>l.name===settings.locationName)?' selected':''}>Eigen locatie...</option>
+      </select>
+      <div id="customLocationFields" style="display:${!LOCATION_PRESETS.some(l=>l.name===settings.locationName)?'block':'none'}">
+        <div class="form-row">
+          <div class="form-group"><label>Naam</label><input type="text" id="custom-loc-name" value="${settings.locationName}"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Breedtegraad</label><input type="number" step="0.0001" id="custom-loc-lat" value="${settings.lat}"></div>
+          <div class="form-group"><label>Lengtegraad</label><input type="number" step="0.0001" id="custom-loc-lon" value="${settings.lon}"></div>
+        </div>
+      </div>
+      <p style="font-size:.68rem;color:var(--dim);margin-top:.3rem">De klok blijft altijd op Amsterdamse tijd (Nederlandse tijdzone). De locatie bepaalt alleen waar het weer vandaan komt.</p>
+    </div>
+
+    <div class="modal-btns">
+      <button class="primary" onclick="saveSettingsFromModal()">Opslaan</button>
+      <button onclick="closeModal()">Annuleren</button>
+    </div>
+  `);
+}
+
+function previewTheme(themeKey){
+  applyTheme(themeKey);
+}
+
+function onLocationPresetChange(val){
+  document.getElementById('customLocationFields').style.display = val==='__custom__' ? 'block' : 'none';
+}
+
+function saveSettingsFromModal(){
+  const presetVal = document.getElementById('location-preset').value;
+  if(presetVal === '__custom__'){
+    const name = document.getElementById('custom-loc-name').value.trim() || 'Eigen locatie';
+    const lat = parseFloat(document.getElementById('custom-loc-lat').value);
+    const lon = parseFloat(document.getElementById('custom-loc-lon').value);
+    if(isNaN(lat) || isNaN(lon)){ showToast('Vul geldige coördinaten in', true); return; }
+    settings.locationName = name;
+    settings.lat = lat;
+    settings.lon = lon;
+  } else {
+    const preset = LOCATION_PRESETS.find(l=>l.name===presetVal);
+    if(preset){ settings.locationName = preset.name; settings.lat = preset.lat; settings.lon = preset.lon; }
+  }
+  settings.theme = document.getElementById('theme-select').value;
+  applyTheme(settings.theme);
+  saveSettings();
+  closeModal();
+  fetchTopbarWeather();
+  showToast('Instellingen opgeslagen!');
+}
+
+function openChangeNameModal(){
+  openModal(`
+    <h3>Naam wijzigen</h3>
+    <div class="form-group"><label>Nieuwe naam</label><input type="text" id="new-acc-name" value="${account.name}"></div>
+    <div class="modal-btns">
+      <button class="primary" onclick="saveNewName()">Opslaan</button>
+      <button onclick="openSettingsModal()">Terug</button>
+    </div>
+  `);
+}
+async function saveNewName(){
+  const name = document.getElementById('new-acc-name').value.trim();
+  if(!name){ showToast('Naam mag niet leeg zijn', true); return; }
+  const { error } = await supabaseClient.auth.updateUser({ data: { name } });
+  if(error){ showToast(error.message, true); return; }
+  account.name = name;
+  showToast('Naam bijgewerkt!');
+  openSettingsModal();
+}
+
+function openChangeCodeModal(){
+  openModal(`
+    <h3>Wachtwoord wijzigen</h3>
+    <div class="form-group"><label>Nieuw wachtwoord (6+ tekens)</label><input type="password" id="new-code"></div>
+    <p style="font-size:.68rem;color:var(--dim);margin-top:-.4rem">Je bent al ingelogd, dus je huidige wachtwoord hoeft niet opnieuw ingevoerd te worden.</p>
+    <div class="modal-btns">
+      <button class="primary" onclick="saveNewCode()">Opslaan</button>
+      <button onclick="openSettingsModal()">Terug</button>
+    </div>
+  `);
+}
+async function saveNewCode(){
+  const newCode = document.getElementById('new-code').value;
+  if(newCode.length<6){ showToast('Wachtwoord moet minstens 6 tekens zijn', true); return; }
+  const { error } = await supabaseClient.auth.updateUser({ password: newCode });
+  if(error){ showToast(error.message, true); return; }
+  showToast('Wachtwoord bijgewerkt!');
+  openSettingsModal();
+}
+
+
+/* ══════════════ INIT ══════════════ */
+initAccountGate();
+</script>
+</div>
+</body>
+</html>
+
+
